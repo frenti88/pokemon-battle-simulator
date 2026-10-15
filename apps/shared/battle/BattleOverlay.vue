@@ -3,12 +3,20 @@ import { computed } from 'vue'
 
 const props = defineProps({ overlay: { type: Object, default: null } })
 const winning = computed(() => props.overlay?.kind === 'victory')
-const fallbackTitle = computed(() => ({ victory: 'Victory', defeat: 'Defeat', draw: 'Draw', 'no-contest': 'No contest' }[props.overlay?.kind] ?? 'Battle'))
+const TITLE_MAP = {
+  'Guest trainer': 'Entrenador invitado',
+  'Gym Leader': 'Líder de Gimnasio',
+  'Elite Four': 'Alto Mando',
+  'Champion': 'Campeón',
+  'Battle trainer': 'Entrenador',
+}
+const fallbackTitle = computed(() => ({ victory: '¡Victoria!', defeat: 'Derrota', draw: 'Empate', 'no-contest': 'Sin resultado' }[props.overlay?.kind] ?? 'Batalla'))
 const announcement = computed(() => {
   const value = props.overlay
   if (!value) return ''
+  const oppTitle = TITLE_MAP[value.opponentTitle] || value.opponentTitle
   return value.kind === 'intro'
-    ? [value.eyebrow, value.roundLabel, `${value.playerLabel || 'Your team'} versus ${[value.opponentTitle, value.opponentName].filter(Boolean).join(' ') || 'your opponent'}`, value.detail].filter(Boolean).join('. ')
+    ? [value.eyebrow, value.roundLabel, `${value.playerLabel || 'Tu equipo'} contra ${[oppTitle, value.opponentName].filter(Boolean).join(' ') || 'tu oponente'}`, value.detail].filter(Boolean).join('. ')
     : [value.eyebrow, value.title || fallbackTitle.value, value.detail].filter(Boolean).join('. ')
 })
 
@@ -33,9 +41,9 @@ const particles = Array.from({ length: 18 }, (_, index) => ({
       <div class="intro-streaks"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="intro-heading"><span>{{ overlay.eyebrow }}</span><strong v-if="overlay.roundLabel">{{ overlay.roundLabel }}</strong></div>
       <div class="intro-matchup">
-        <div class="intro-contender intro-player"><span class="contender-label">YOUR TEAM</span><strong>{{ overlay.playerLabel || 'Challenger' }}</strong><span class="contender-rule"></span></div>
+        <div class="intro-contender intro-player"><span class="contender-label">TU EQUIPO</span><strong>{{ overlay.playerLabel || 'Aspirante' }}</strong><span class="contender-rule"></span></div>
         <div class="intro-versus"><span class="versus-ring"></span><strong>VS</strong><span class="versus-cross"></span></div>
-        <div class="intro-contender intro-opponent"><span class="contender-label">{{ overlay.opponentTitle || 'OPPONENT' }}</span><strong>{{ overlay.opponentName || 'Challenger' }}</strong><span class="contender-rule"></span></div>
+        <div class="intro-contender intro-opponent"><span class="contender-label">{{ TITLE_MAP[overlay.opponentTitle]?.toUpperCase() || overlay.opponentTitle || 'OPONENTE' }}</span><strong>{{ overlay.opponentName || 'Aspirante' }}</strong><span class="contender-rule"></span></div>
       </div>
       <p v-if="overlay.detail" class="intro-detail">{{ overlay.detail }}</p>
       <span class="intro-bottom-line"></span>

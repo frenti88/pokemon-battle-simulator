@@ -26,10 +26,10 @@ const filteredMoves = computed(() => moves.filter(item =>
   normalize(`${item.name} ${item.id} ${item.number}`).includes(normalize(search.value))
   && (filter.value !== 'sound' || item.sound.available)
   && (filter.value !== 'phased' || item.phases?.includes('prepare'))))
-const sourceName = computed(() => ROSTER[source.value]?.name ?? (source.value === 'tall' ? 'Tall test shape' : 'Wide test shape'))
-const targetName = computed(() => ROSTER[target.value]?.name ?? (target.value === 'tall' ? 'Tall test shape' : 'Wide test shape'))
-const soundLabel = computed(() => !selected.value.sound.available ? 'No compatible move sound'
-  : selected.value.sound.kind === 'accepted' ? 'Synced move sound' : 'Move sound available')
+const sourceName = computed(() => ROSTER[source.value]?.name ?? (source.value === 'tall' ? 'Figura alta de prueba' : 'Figura ancha de prueba'))
+const targetName = computed(() => ROSTER[target.value]?.name ?? (target.value === 'tall' ? 'Figura alta de prueba' : 'Figura ancha de prueba'))
+const soundLabel = computed(() => !selected.value.sound.available ? 'Sin sonido de movimiento compatible'
+  : selected.value.sound.kind === 'accepted' ? 'Sonido de movimiento sincronizado' : 'Sonido de movimiento disponible')
 const stageStyle = computed(() => ({ aspectRatio: dimensions[layout.value].join(' / ') }))
 const audio = createPlaygroundAudio()
 const audioState = shallowRef(audio.getState())
@@ -38,18 +38,18 @@ const playbackState = shallowRef({ status: 'idle', busy: false, cue: null, itera
 let scene = null, disposed = false, generation = 0, cryGeneration = 0, motionPreference
 const player = createPlaygroundPlayback({ getScene: () => scene, audio, onState: value => { playbackState.value = value } })
 const busy = computed(() => playbackState.value.busy)
-const status = computed(() => loading.value ? 'Loading scene' : sceneError.value ? 'Scene unavailable'
-  : ({ idle: 'Ready', loading: 'Preparing sound', playing: 'Playing', waiting: 'Looping', error: 'Playback unavailable' }[playbackState.value.status] ?? 'Ready'))
-const message = computed(() => sceneError.value || (loading.value ? 'Preparing your Pokémon…' : playbackState.value.message || 'Choose a move and press Play effect.'))
-const cueLabel = computed(() => ({ prepared: 'Preparation', impact: 'Contact', recovery: 'Recovery' }[playbackState.value.cue] ?? 'Ready for contact'))
-const audioNote = computed(() => !audioState.value.enabled ? 'Sound is muted.'
-  : audioState.value.status === 'unavailable' ? 'Audio is unavailable in this browser.'
-  : audioState.value.loadError ? 'A recording could not load. Play again to retry.'
-  : !audioState.value.sfxEnabled ? 'Move sounds are off. Cry auditions are still available.'
-  : reducedMotion.value ? 'Reduced motion uses a shorter visual; move sound is paused.'
-  : phase.value === 'prepare' ? 'Preparation previews are silent.'
-  : !selected.value.sound.available ? 'This move previews visually; no compatible recording is available.'
-  : 'Sound follows the effect. Recordings play at their original speed.')
+const status = computed(() => loading.value ? 'Cargando escenario' : sceneError.value ? 'Escenario no disponible'
+  : ({ idle: 'Listo', loading: 'Preparando sonido', playing: 'Reproduciendo', waiting: 'En bucle', error: 'Reproducción no disponible' }[playbackState.value.status] ?? 'Listo'))
+const message = computed(() => sceneError.value || (loading.value ? 'Preparando tu Pokémon…' : playbackState.value.message || 'Elige un movimiento y pulsa Reproducir efecto.'))
+const cueLabel = computed(() => ({ prepared: 'Preparación', impact: 'Contacto', recovery: 'Recuperación' }[playbackState.value.cue] ?? 'Listo para el contacto'))
+const audioNote = computed(() => !audioState.value.enabled ? 'El sonido está silenciado.'
+  : audioState.value.status === 'unavailable' ? 'El audio no está disponible en este navegador.'
+  : audioState.value.loadError ? 'No se pudo cargar una grabación. Reproduce de nuevo para reintentar.'
+  : !audioState.value.sfxEnabled ? 'Sonidos de movimiento desactivados. Las muestras de gritos siguen disponibles.'
+  : reducedMotion.value ? 'Movimiento reducido usa un efecto visual más corto; el sonido está en pausa.'
+  : phase.value === 'prepare' ? 'Las vistas previas de preparación no tienen sonido.'
+  : !selected.value.sound.available ? 'Este movimiento solo tiene vista previa visual; no hay grabación compatible disponible.'
+  : 'El sonido sigue al efecto. Las grabaciones se reproducen a su velocidad original.')
 
 function stop() { cryGeneration++; cryMessage.value = ''; player.stop() }
 async function refresh() {
@@ -66,9 +66,9 @@ async function refresh() {
     ] })
     if (disposed || token !== generation) { next.dispose(); return }
     scene = next; sceneReady.value = true; loading.value = false
-    player.stop('Ready to play.')
+    player.stop('Listo para reproducir.')
   } catch {
-    if (!disposed && token === generation) { loading.value = false; sceneError.value = 'The scene could not load. Retry to prepare the playground.' }
+    if (!disposed && token === generation) { loading.value = false; sceneError.value = 'No se pudo cargar el escenario. Reintenta para preparar el laboratorio.' }
   }
 }
 function changeProfile(side) {
@@ -100,9 +100,9 @@ function resetScene() {
 async function playCry(profile, name) {
   stop()
   const token = ++cryGeneration
-  cryMessage.value = `Preparing ${name}’s cry…`
+  cryMessage.value = `Preparando el grito de ${name}…`
   const played = await audio.previewCry(profile)
-  if (!disposed && token === cryGeneration) cryMessage.value = played ? `${name}’s cry` : 'This cry is unavailable.'
+  if (!disposed && token === cryGeneration) cryMessage.value = played ? `Grito de ${name}` : 'Este grito no está disponible.'
 }
 function keydown(event) {
   if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
@@ -127,65 +127,65 @@ onBeforeUnmount(() => {
 <template>
   <main class="fx-shell">
     <header class="fx-header">
-      <a class="fx-brand" href="/"><span class="ball-mark" aria-hidden="true"></span>Battle Lab<span class="fx-brand-section">/ Playground</span></a>
-      <nav aria-label="Main navigation"><a href="/">Home</a><a href="/simulation">Simulation</a><a href="/preview">Move preview</a><a href="/playground" aria-current="page">FX playground</a></nav>
+      <a class="fx-brand" href="/"><span class="ball-mark" aria-hidden="true"></span>Battle Lab<span class="fx-brand-section">/ Laboratorio</span></a>
+      <nav aria-label="Navegación principal"><a href="/">Inicio</a><a href="/simulation">Simulación</a><a href="/preview">Vista previa de movimientos</a><a href="/playground" aria-current="page">Laboratorio FX</a></nav>
     </header>
     <div class="fx-page-heading">
-      <div><p class="fx-eyebrow">THE EFFECTS STUDIO</p><h1>Every move. Every detail<span>.</span></h1><p>Explore the motion, hear the impact, and make it your own.</p></div>
-      <span class="fx-catalog-count"><strong>{{ moves.length }}</strong> move effects</span>
+      <div><p class="fx-eyebrow">EL ESTUDIO DE EFECTOS</p><h1>Cada movimiento. Cada detalle<span>.</span></h1><p>Explora el movimiento, escucha el impacto y hazlo tuyo.</p></div>
+      <span class="fx-catalog-count"><strong>{{ moves.length }}</strong> efectos de movimiento</span>
     </div>
 
     <div class="fx-workspace">
       <aside class="fx-library" aria-labelledby="fx-library-title">
-        <div class="fx-library-heading"><h2 id="fx-library-title">Move library</h2><span>{{ filteredMoves.length }} / {{ moves.length }}</span></div>
-        <label class="fx-search"><span class="fx-sr-only">Search moves</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input v-model="search" type="search" placeholder="Search name or move number" autocomplete="off" aria-controls="fx-moves"></label>
-        <div class="fx-filter-row" role="group" aria-label="Filter moves"><button :aria-pressed="filter === 'all'" @click="filter = 'all'">All</button><button :aria-pressed="filter === 'sound'" @click="filter = 'sound'">With sound</button><button :aria-pressed="filter === 'phased'" @click="filter = 'phased'">Two-step</button></div>
-        <div id="fx-moves" class="fx-move-list" aria-label="Moves">
+        <div class="fx-library-heading"><h2 id="fx-library-title">Biblioteca de movimientos</h2><span>{{ filteredMoves.length }} / {{ moves.length }}</span></div>
+        <label class="fx-search"><span class="fx-sr-only">Buscar movimientos</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input v-model="search" type="search" placeholder="Buscar nombre o número de movimiento" autocomplete="off" aria-controls="fx-moves"></label>
+        <div class="fx-filter-row" role="group" aria-label="Filtrar movimientos"><button :aria-pressed="filter === 'all'" @click="filter = 'all'">Todos</button><button :aria-pressed="filter === 'sound'" @click="filter = 'sound'">Con sonido</button><button :aria-pressed="filter === 'phased'" @click="filter = 'phased'">En dos fases</button></div>
+        <div id="fx-moves" class="fx-move-list" aria-label="Movimientos">
           <button v-for="item in filteredMoves" :key="item.id" class="fx-move-option" :class="{ selected: move === item.id }" :aria-pressed="move === item.id" @click="selectMove(item.id)">
-            <span class="fx-move-dot" :style="{ background: item.color }" aria-hidden="true"></span><span class="fx-move-name">{{ item.name }}<small>{{ item.phases?.includes('prepare') ? 'Two-step effect' : item.sound.available ? 'Sound available' : 'Visual effect' }}</small></span><span class="fx-move-number">{{ item.number }}</span>
+            <span class="fx-move-dot" :style="{ background: item.color }" aria-hidden="true"></span><span class="fx-move-name">{{ item.name }}<small>{{ item.phases?.includes('prepare') ? 'Efecto en 2 fases' : item.sound.available ? 'Sonido disponible' : 'Efecto visual' }}</small></span><span class="fx-move-number">{{ item.number }}</span>
           </button>
-          <div v-if="!filteredMoves.length" class="fx-empty"><strong>No matching moves</strong><p>Try a different name or number.</p><button @click="search = ''; filter = 'all'">Clear search</button></div>
+          <div v-if="!filteredMoves.length" class="fx-empty"><strong>No hay movimientos coincidentes</strong><p>Prueba con otro nombre o número.</p><button @click="search = ''; filter = 'all'">Limpiar búsqueda</button></div>
         </div>
-        <p class="fx-library-note">All moves, either side. Your selected move stays ready while you search.</p>
+        <p class="fx-library-note">Todos los movimientos, en cualquier bando. Tu movimiento seleccionado se mantiene mientras buscas.</p>
       </aside>
 
       <div class="fx-main">
         <section class="fx-preview" aria-labelledby="fx-selected-title" :style="{ '--move-color': selected.color }">
-          <div class="fx-preview-heading"><div><p class="fx-eyebrow">MOVE {{ selected.number }} <span> / {{ phased && phase === 'prepare' ? 'PREPARATION' : 'EFFECT PREVIEW' }}</span></p><h2 id="fx-selected-title">{{ selected.name }}</h2><p>{{ selected.description }}</p></div><span class="fx-status" :class="{ active: busy }"><i></i>{{ status }}</span></div>
-          <div class="fx-playback-bar"><button class="fx-primary" :disabled="!sceneReady || loading" @click="play"><span aria-hidden="true">▶</span>{{ busy ? 'Replay effect' : 'Play effect' }}</button><button class="fx-secondary" :disabled="!sceneReady && !cryMessage" @click="stop">Stop</button><label class="fx-check"><input v-model="repeat" type="checkbox">Loop</label><label v-if="repeat" class="fx-gap"><span class="fx-sr-only">Loop gap</span><select v-model.number="repeatGap" aria-label="Loop gap"><option :value="500">0.5s gap</option><option :value="1000">1s gap</option><option :value="2000">2s gap</option></select></label><span class="fx-key-hint"><kbd>space</kbd> play / stop</span></div>
-          <div class="fx-stage-frame"><div ref="host" class="fx-stage" :class="`fx-stage-${layout}`" :style="stageStyle" role="img" :aria-label="`${sourceName} and ${targetName}: ${selected.name} effect preview`"></div><div v-if="loading || sceneError" class="fx-scene-message" role="status"><p>{{ message }}</p><button v-if="sceneError" class="fx-secondary" @click="refresh">Retry scene</button></div><div class="fx-stage-caption" :class="{ 'is-reversed': reversed }" aria-hidden="true"><span>{{ sourceName }} <b v-if="activeActorId === 'source'">MOVE USER</b></span><span>{{ targetName }} <b v-if="activeActorId === 'target'">MOVE USER</b></span></div></div>
-          <div class="fx-feedback"><p role="status" aria-live="polite">{{ message }}</p><span class="fx-cue" :class="{ reached: playbackState.cue }">{{ cueLabel }}</span><span v-if="repeat && playbackState.iteration > 0" class="fx-loop-count">Run {{ playbackState.iteration }}</span></div>
+          <div class="fx-preview-heading"><div><p class="fx-eyebrow">MOVIMIENTO {{ selected.number }} <span> / {{ phased && phase === 'prepare' ? 'PREPARACIÓN' : 'VISTA PREVIA DE EFECTO' }}</span></p><h2 id="fx-selected-title">{{ selected.name }}</h2><p>{{ selected.description }}</p></div><span class="fx-status" :class="{ active: busy }"><i></i>{{ status }}</span></div>
+          <div class="fx-playback-bar"><button class="fx-primary" :disabled="!sceneReady || loading" @click="play"><span aria-hidden="true">▶</span>{{ busy ? 'Repetir efecto' : 'Reproducir efecto' }}</button><button class="fx-secondary" :disabled="!sceneReady && !cryMessage" @click="stop">Detener</button><label class="fx-check"><input v-model="repeat" type="checkbox">Bucle</label><label v-if="repeat" class="fx-gap"><span class="fx-sr-only">Intervalo de bucle</span><select v-model.number="repeatGap" aria-label="Intervalo de bucle"><option :value="500">Pausa 0.5s</option><option :value="1000">Pausa 1s</option><option :value="2000">Pausa 2s</option></select></label><span class="fx-key-hint"><kbd>espacio</kbd> reproducir / parar</span></div>
+          <div class="fx-stage-frame"><div ref="host" class="fx-stage" :class="`fx-stage-${layout}`" :style="stageStyle" role="img" :aria-label="`${sourceName} y ${targetName}: vista previa de efecto de ${selected.name}`"></div><div v-if="loading || sceneError" class="fx-scene-message" role="status"><p>{{ message }}</p><button v-if="sceneError" class="fx-secondary" @click="refresh">Reintentar escena</button></div><div class="fx-stage-caption" :class="{ 'is-reversed': reversed }" aria-hidden="true"><span>{{ sourceName }} <b v-if="activeActorId === 'source'">USUARIO</b></span><span>{{ targetName }} <b v-if="activeActorId === 'target'">USUARIO</b></span></div></div>
+          <div class="fx-feedback"><p role="status" aria-live="polite">{{ message }}</p><span class="fx-cue" :class="{ reached: playbackState.cue }">{{ cueLabel }}</span><span v-if="repeat && playbackState.iteration > 0" class="fx-loop-count">Ronda {{ playbackState.iteration }}</span></div>
         </section>
 
         <div class="fx-settings-grid">
           <section class="fx-control-card" aria-labelledby="fx-playback-title">
-            <div class="fx-card-heading"><span class="fx-card-index">01</span><h2 id="fx-playback-title">Playback</h2></div>
-            <label class="fx-field">Move user<select v-model="activeActorId"><option value="source">Your Pokémon · {{ sourceName }}</option><option value="target">Opponent · {{ targetName }}</option></select></label>
-            <div v-if="phased" class="fx-phase" role="group" aria-label="Move round"><button :aria-pressed="phase === 'prepare'" @click="changePhase('prepare')">01 · Prepare</button><button :aria-pressed="phase === 'attack'" @click="changePhase('attack')">02 · Attack</button></div>
-            <label class="fx-check fx-motion"><input v-model="reducedMotion" type="checkbox">Reduced motion<span>Short, softer effects</span></label>
-            <div class="fx-variation"><label class="fx-field">Visual seed<input v-model.number="seed" type="number" min="0" max="999999" step="1" @change="stop"></label><button class="fx-secondary" @click="newVariation">New variation</button></div>
-            <p class="fx-help">Keep the same seed to compare repeats. Change it for a fresh particle pattern.</p>
+            <div class="fx-card-heading"><span class="fx-card-index">01</span><h2 id="fx-playback-title">Reproducción</h2></div>
+            <label class="fx-field">Usuario del movimiento<select v-model="activeActorId"><option value="source">Tu Pokémon · {{ sourceName }}</option><option value="target">Oponente · {{ targetName }}</option></select></label>
+            <div v-if="phased" class="fx-phase" role="group" aria-label="Fase del movimiento"><button :aria-pressed="phase === 'prepare'" @click="changePhase('prepare')">01 · Preparar</button><button :aria-pressed="phase === 'attack'" @click="changePhase('attack')">02 · Atacar</button></div>
+            <label class="fx-check fx-motion"><input v-model="reducedMotion" type="checkbox">Movimiento reducido<span>Efectos más breves y suaves</span></label>
+            <div class="fx-variation"><label class="fx-field">Semilla visual<input v-model.number="seed" type="number" min="0" max="999999" step="1" @change="stop"></label><button class="fx-secondary" @click="newVariation">Nueva variación</button></div>
+            <p class="fx-help">Mantén la misma semilla para comparar repeticiones. Cámbiala para un nuevo patrón de partículas.</p>
           </section>
 
           <section class="fx-control-card" aria-labelledby="fx-sound-title">
-            <div class="fx-card-heading"><span class="fx-card-index">02</span><h2 id="fx-sound-title">Sound</h2><label class="fx-check fx-sound-toggle"><input type="checkbox" aria-label="Sound" :checked="audioState.enabled" @change="audio.setEnabled($event.target.checked)">{{ audioState.enabled ? 'On' : 'Off' }}</label></div>
+            <div class="fx-card-heading"><span class="fx-card-index">02</span><h2 id="fx-sound-title">Sonido</h2><label class="fx-check fx-sound-toggle"><input type="checkbox" aria-label="Sonido" :checked="audioState.enabled" @change="audio.setEnabled($event.target.checked)">{{ audioState.enabled ? 'Activado' : 'Desactivado' }}</label></div>
             <div class="fx-sound-summary"><span class="fx-sound-indicator" :class="{ available: selected.sound.available }"></span>{{ soundLabel }}</div>
-            <label class="fx-volume">Volume <output>{{ Math.round(audioState.volume * 100) }}%</output><input type="range" aria-label="Sound volume" min="0" max="100" step="5" :value="Math.round(audioState.volume * 100)" :disabled="!audioState.enabled" @input="audio.setVolume(Number($event.target.value) / 100)"></label>
-            <div class="fx-sound-options"><label class="fx-check"><input type="checkbox" :checked="audioState.sfxEnabled" :disabled="!audioState.enabled" @change="audio.setSfxEnabled($event.target.checked)">Move sounds</label><label class="fx-field">Impact feedback<select v-model="effectiveness" :disabled="!audioState.enabled || !audioState.sfxEnabled"><option value="">None</option><option value="super-effective">Super effective</option><option value="resisted">Not very effective</option></select></label></div>
+            <label class="fx-volume">Volumen <output>{{ Math.round(audioState.volume * 100) }}%</output><input type="range" aria-label="Volumen del sonido" min="0" max="100" step="5" :value="Math.round(audioState.volume * 100)" :disabled="!audioState.enabled" @input="audio.setVolume(Number($event.target.value) / 100)"></label>
+            <div class="fx-sound-options"><label class="fx-check"><input type="checkbox" :checked="audioState.sfxEnabled" :disabled="!audioState.enabled" @change="audio.setSfxEnabled($event.target.checked)">Sonidos de movimientos</label><label class="fx-field">Reacción de impacto<select v-model="effectiveness" :disabled="!audioState.enabled || !audioState.sfxEnabled"><option value="">Ninguna</option><option value="super-effective">Muy eficaz</option><option value="resisted">No muy eficaz</option></select></label></div>
             <p class="fx-help" role="status">{{ audioNote }}</p>
           </section>
         </div>
 
         <details class="fx-actors" open>
-          <summary><span class="fx-card-index">03</span><span>Pokémon &amp; stage<small>Change the cast. Test the framing.</small></span><span class="fx-disclosure" aria-hidden="true">⌄</span></summary>
+          <summary><span class="fx-card-index">03</span><span>Pokémon y escenario<small>Cambia los participantes. Prueba el encuadre.</small></span><span class="fx-disclosure" aria-hidden="true">⌄</span></summary>
           <div class="fx-actor-grid">
-            <div class="fx-actor"><RosterPicker v-model="source" label="Your Pokémon" include-shapes @change="changeProfile('source')"/><label class="fx-scale">Sprite scale <output>{{ Number(sourceSize).toFixed(1) }}×</output><input v-model.number="sourceSize" type="range" aria-label="Your Pokémon scale" min="0.8" max="1.2" step="0.1" @change="refresh"></label><button class="fx-secondary fx-cry" :disabled="!audioState.enabled || !ROSTER[source]" @click="playCry(source, sourceName)">Listen to {{ sourceName }}’s cry</button></div>
-            <div class="fx-actor"><RosterPicker v-model="target" label="Opponent Pokémon" include-shapes @change="changeProfile('target')"/><label class="fx-scale">Sprite scale <output>{{ Number(targetSize).toFixed(1) }}×</output><input v-model.number="targetSize" type="range" aria-label="Opponent Pokémon scale" min="0.8" max="1.2" step="0.1" @change="refresh"></label><button class="fx-secondary fx-cry" :disabled="!audioState.enabled || !ROSTER[target]" @click="playCry(target, targetName)">Listen to {{ targetName }}’s cry</button></div>
+            <div class="fx-actor"><RosterPicker v-model="source" label="Tu Pokémon" include-shapes @change="changeProfile('source')"/><label class="fx-scale">Escala del sprite <output>{{ Number(sourceSize).toFixed(1) }}×</output><input v-model.number="sourceSize" type="range" aria-label="Escala de tu Pokémon" min="0.8" max="1.2" step="0.1" @change="refresh"></label><button class="fx-secondary fx-cry" :disabled="!audioState.enabled || !ROSTER[source]" @click="playCry(source, sourceName)">Escuchar grito de {{ sourceName }}</button></div>
+            <div class="fx-actor"><RosterPicker v-model="target" label="Pokémon oponente" include-shapes @change="changeProfile('target')"/><label class="fx-scale">Escala del sprite <output>{{ Number(targetSize).toFixed(1) }}×</output><input v-model.number="targetSize" type="range" aria-label="Escala del Pokémon oponente" min="0.8" max="1.2" step="0.1" @change="refresh"></label><button class="fx-secondary fx-cry" :disabled="!audioState.enabled || !ROSTER[target]" @click="playCry(target, targetName)">Escuchar grito de {{ targetName }}</button></div>
           </div>
-          <div class="fx-stage-controls"><label class="fx-field">Battlefield<select v-model="layout" @change="refresh"><option value="wide">Wide · 1000 × 450</option><option value="square">Square · 720 × 600</option><option value="portrait">Portrait · 560 × 700</option></select></label><label class="fx-check"><input v-model="reversed" type="checkbox" @change="refresh">Mirror layout</label><button class="fx-secondary" @click="resetScene">Reset stage</button></div>
+          <div class="fx-stage-controls"><label class="fx-field">Campo de batalla<select v-model="layout" @change="refresh"><option value="wide">Panorámico · 1000 × 450</option><option value="square">Cuadrado · 720 × 600</option><option value="portrait">Vertical · 560 × 700</option></select></label><label class="fx-check"><input v-model="reversed" type="checkbox" @change="refresh">Invertir perspectiva</label><button class="fx-secondary" @click="resetScene">Reiniciar escenario</button></div>
           <p v-if="cryMessage" class="fx-cry-feedback" role="status">{{ cryMessage }}</p>
         </details>
-        <p class="fx-footer-note">A space for motion and sound. Previews do not change battle results.</p>
+        <p class="fx-footer-note">Un espacio para el movimiento y el sonido. Las vistas previas no alteran los resultados del combate.</p>
       </div>
     </div>
   </main>

@@ -9,12 +9,20 @@ const surfaceStyle = computed(() => ({
   '--feedback-duration': `${Math.max(1, props.feedback?.durationMs || 1100)}ms`,
 }))
 const rayAngles = [0, 37, 79, 123, 163, 202, 248, 287, 326]
+const translatedLabel = computed(() => {
+  const lbl = props.feedback?.label
+  if (!lbl) return ''
+  if (lbl === 'Super effective!') return '¡Es muy eficaz!'
+  if (lbl.startsWith('Not very effective')) return 'No es muy eficaz…'
+  if (lbl === 'No effect') return 'No tiene efecto'
+  return lbl
+})
 </script>
 
 <template>
   <div v-if="feedback" :key="feedback.key" class="impact-feedback" :data-kind="feedback.kind" :data-actor="feedback.actorId"
     :data-motion="feedback.reducedMotion ? 'reduced' : 'full'" :style="surfaceStyle" role="status" aria-live="polite" aria-atomic="true">
-    <span class="impact-announcement">{{ feedback.label }}</span>
+    <span class="impact-announcement">{{ translatedLabel }}</span>
     <div class="impact-art" aria-hidden="true">
       <template v-if="feedback.kind === 'super-effective'">
         <span class="impact-bloom"></span>
@@ -37,7 +45,7 @@ const rayAngles = [0, 37, 79, 123, 163, 202, 248, 287, 326]
     </div>
     <div class="impact-label-position" aria-hidden="true">
       <div class="impact-label">
-        <span class="impact-label-text">{{ feedback.label }}</span>
+        <span class="impact-label-text">{{ translatedLabel }}</span>
       </div>
     </div>
   </div>

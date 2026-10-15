@@ -9,6 +9,7 @@ import { createSimulationPresenter } from './presentation.js'
 import { createBattleSequence } from './sequence.js'
 import { createImpactPlayback } from './impactPlayback.js'
 import { sideConditionLabels, viewerResultTitle } from './viewLabels.js'
+import { translateBattleText, translateSideCondition } from './i18n.js'
 
 const props = defineProps({
   playerLabel: { type: String, default: 'Your team' },
@@ -48,8 +49,15 @@ const movePresenter = createSimulationPresenter({
 })
 const presenter = createBattleSequence({ presenter: movePresenter, onOverlay: value => { battleOverlay.value = value } })
 const members = computed(() => activeMembers(displayed.value))
-const weather = computed(() => ({ RainDance: 'Rain', SunnyDay: 'Harsh sunlight', Sandstorm: 'Sandstorm', Hail: 'Hail' }[displayed.value?.weather] ?? displayed.value?.weather))
-const sideConditions = computed(() => sideConditionLabels(displayed.value))
+const weather = computed(() => ({
+  RainDance: 'Lluvia',
+  SunnyDay: 'Sol abrasador',
+  Sandstorm: 'Tormenta de arena',
+  Hail: 'Granizo',
+  Rain: 'Lluvia',
+  'Harsh sunlight': 'Sol abrasador',
+}[displayed.value?.weather] ?? displayed.value?.weather))
+const sideConditions = computed(() => sideConditionLabels(displayed.value).map(translateSideCondition))
 function playback(value) { playing.value = value; emit('playback', value) }
 // Idle relinquishes its transforms synchronously before any presenter borrows them.
 watch([reducedMotion, playing, pageVisible, () => props.inactive, effectsEnabled], ([reduced, active, visible, inactive, enabled]) => {
@@ -142,15 +150,15 @@ onBeforeUnmount(() => {
 <template>
   <div class="sim-field" :class="{ 'sim-field-intro': battleOverlay?.kind === 'intro', 'sim-field-opening': openingBattle }">
     <div class="sim-field-grid" aria-hidden="true"></div>
-    <div ref="stage" class="sim-canvas" :aria-label="`${members[0]?.species || 'Your Pokémon'} versus ${members[1]?.species || 'opponent'}`" role="img"></div>
+    <div ref="stage" class="sim-canvas" :aria-label="`${members[0]?.species || 'Tu Pokémon'} contra ${members[1]?.species || 'el oponente'}`" role="img"></div>
     <div v-if="sceneAvailable === false" class="sim-fallback" aria-hidden="true"><img v-if="members[0] && !members[0].fainted" class="sim-near-sprite" :src="spriteUrl(members[0].species, 'back')" alt=""><img v-if="members[1] && !members[1].fainted" class="sim-far-sprite" :src="spriteUrl(members[1].species)" alt=""></div>
     <div class="sim-impact-surface"><div class="sim-impact-fit"><ImpactFeedback :feedback="impactFeedback"/></div></div>
     <div class="sim-hud" :class="{ 'sim-hud-hit': hitStep }"><HealthCard :member="members[0]" :impact="impactFeedback?.actorId === 'source' ? impactFeedback : null"/><HealthCard :member="members[1]" :impact="impactFeedback?.actorId === 'target' ? impactFeedback : null" opponent/></div>
     <span v-if="weather" class="sim-weather">{{ weather }}</span>
     <BattleOverlay :overlay="battleOverlay"/>
   </div>
-  <p class="sim-announcement" role="status" aria-live="polite">{{ message }}</p>
+  <p class="sim-announcement" role="status" aria-live="polite">{{ translateBattleText(message) }}</p>
   <div v-if="sideConditions.length" class="sim-side-conditions"><span v-for="condition in sideConditions" :key="condition">{{ condition }}</span></div>
   <div class="sim-battle-details"><BattleDetails :member="members[0]"/><BattleDetails :member="members[1]" opponent/></div>
-  <p v-if="sceneAvailable === false" class="sim-render-note">Effects are unavailable on this device. Battle controls still work.</p>
+  <p v-if="sceneAvailable === false" class="sim-render-note">Los efectos no están disponibles en este dispositivo. Los controles de combate siguen funcionando.</p>
 </template>

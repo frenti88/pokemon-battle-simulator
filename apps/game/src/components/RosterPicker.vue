@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, useId } from 'vue'
 import { ROSTER_LIST } from '../roster/index.js'
+import { translateType } from '../../../shared/battle/i18n.js'
 
 const props = defineProps({
   modelValue: { type: String, required: true },
@@ -10,10 +11,11 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change'])
 const query = ref(''), controlId = useId()
 const shapes = [
-  { id: 'tall', name: 'Tall test shape', kind: 'shape' },
-  { id: 'wide', name: 'Wide test shape', kind: 'shape' },
+  { id: 'tall', name: 'Figura alta de prueba', kind: 'shape' },
+  { id: 'wide', name: 'Figura ancha de prueba', kind: 'shape' },
 ]
-const options = computed(() => props.includeShapes ? [...ROSTER_LIST, ...shapes] : ROSTER_LIST)
+const kantoRoster = computed(() => ROSTER_LIST.filter(record => record.num >= 1 && record.num <= 151))
+const options = computed(() => props.includeShapes ? [...kantoRoster.value, ...shapes] : kantoRoster.value)
 const selected = computed(() => options.value.find(record => record.id === props.modelValue))
 // Search text may be forgiving; the selected value always remains an exact ID.
 const searchText = value => String(value).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -26,8 +28,8 @@ const matches = computed(() => {
 })
 const preserveSelection = computed(() => selected.value && !matches.value.some(record => record.id === props.modelValue))
 const optionLabel = record => record.num == null ? record.name : `#${String(record.num).padStart(3, '0')} · ${record.name}`
-const kindLabels = { base: 'Base species', alternate: 'Alternate form', cosmetic: 'Cosmetic form', 'battle-only': 'Battle form' }
-const stats = [['hp', 'HP'], ['atk', 'Attack'], ['def', 'Defense'], ['spa', 'Sp. Atk'], ['spd', 'Sp. Def'], ['spe', 'Speed']]
+const kindLabels = { base: 'Especie base', alternate: 'Forma alternativa', cosmetic: 'Forma cosmética', 'battle-only': 'Forma de combate' }
+const stats = [['hp', 'PS'], ['atk', 'Ataque'], ['def', 'Defensa'], ['spa', 'At. Esp.'], ['spd', 'Def. Esp.'], ['spe', 'Velocidad']]
 
 function choose(event) {
   const id = event.target.value
@@ -40,33 +42,33 @@ function choose(event) {
 <template>
   <div class="roster-picker">
     <label class="picker-label" :for="controlId">{{ label }}</label>
-    <input v-model="query" class="picker-control" type="search" placeholder="Search name, ID or Pokédex number"
-      :aria-label="`Search ${label.toLowerCase()}`" :aria-controls="controlId" :aria-describedby="`${controlId}-results`" autocomplete="off">
+    <input v-model="query" class="picker-control" type="search" placeholder="Buscar nombre, ID o número de Kanto (#001–#151)"
+      :aria-label="`Buscar ${label.toLowerCase()}`" :aria-controls="controlId" :aria-describedby="`${controlId}-results`" autocomplete="off">
     <select :id="controlId" class="picker-control" :value="modelValue" @change="choose">
-      <optgroup v-if="preserveSelection" label="Current selection">
+      <optgroup v-if="preserveSelection" label="Selección actual">
         <option :value="selected.id">{{ optionLabel(selected) }}</option>
       </optgroup>
       <option v-for="record in matches" :key="record.id" :value="record.id">{{ optionLabel(record) }}</option>
     </select>
     <p :id="`${controlId}-results`" class="picker-results" aria-live="polite">
-      {{ matches.length ? `${matches.length} ${includeShapes ? 'options' : 'Pokémon'} found` : 'No matches. Current selection is unchanged.' }}
+      {{ matches.length ? `${matches.length} ${includeShapes ? 'opciones encontradas' : 'Pokémon de Kanto encontrados'}` : 'Sin coincidencias. La selección actual no ha cambiado.' }}
     </p>
     <details v-if="selected" class="reference-details">
-      <summary>{{ selected.kind === 'shape' ? 'Test shape details' : 'Pokémon reference details' }}</summary>
-      <p v-if="selected.kind === 'shape'">A geometric fixture for checking effect placement.</p>
+      <summary>{{ selected.kind === 'shape' ? 'Detalles de figura de prueba' : 'Detalles de referencia Pokémon' }}</summary>
+      <p v-if="selected.kind === 'shape'">Una figura geométrica para verificar la ubicación de efectos.</p>
       <template v-else>
         <p class="reference-heading">{{ optionLabel(selected) }}</p>
-        <p>{{ kindLabels[selected.kind] || selected.kind }} · Species introduced in Gen {{ selected.speciesGeneration }}</p>
-        <p v-if="selected.forme">Form: {{ selected.forme }}</p>
-        <div class="reference-types" aria-label="Types">
-          <span v-for="type in selected.types" :key="type">{{ type }}</span>
+        <p>{{ kindLabels[selected.kind] || selected.kind }} · Especie introducida en Gen {{ selected.speciesGeneration }}</p>
+        <p v-if="selected.forme">Forma: {{ selected.forme }}</p>
+        <div class="reference-types" aria-label="Tipos">
+          <span v-for="type in selected.types" :key="type">{{ translateType(type) }}</span>
         </div>
-        <p><strong>Abilities:</strong> {{ selected.abilities.join(', ') }}</p>
-        <p class="stats-heading">Base stats</p>
+        <p><strong>Habilidades:</strong> {{ selected.abilities.join(', ') }}</p>
+        <p class="stats-heading">Estadísticas base</p>
         <dl class="base-stats">
           <div v-for="[key, title] in stats" :key="key"><dt>{{ title }}</dt><dd>{{ selected.baseStats[key] }}</dd></div>
         </dl>
-        <p class="reference-note">Reference data only. Preview HP and damage use fixed samples.</p>
+        <p class="reference-note">Solo datos de referencia. Los PS y el daño de la vista previa usan muestras fijas.</p>
       </template>
     </details>
   </div>

@@ -2,6 +2,7 @@
 import { computed, ref, useId } from 'vue'
 import { spriteUrl } from '../battle/scene.js'
 import { STATS, createTeamDraft, selectDraftSpecies, normalizeId, findCatalogRecord } from './teamDraft.js'
+import { translateType, translateCategory } from '../battle/i18n.js'
 
 const props = defineProps({
   team: { type: Array, default: () => [] },
@@ -13,7 +14,8 @@ const emit = defineEmits(['update:team'])
 const id = useId(), activeSlot = ref(0), speciesQuery = ref(''), moveQueries = ref(['', '', '', '']), presetChoice = ref('')
 const slots = computed(() => createTeamDraft(props.team))
 const current = computed(() => slots.value[activeSlot.value])
-const speciesOptions = computed(() => (props.catalog?.species ?? []).filter(record => record.kind !== 'battle-only'))
+const speciesOptions = computed(() => (props.catalog?.species ?? []).filter(record => record.kind !== 'battle-only' && record.num >= 1 && record.num <= 151))
+const kantoPresets = computed(() => (props.presets ?? []).filter(preset => preset.id === 'kanto'))
 const selectedSpecies = computed(() => findCatalogRecord(speciesOptions.value, current.value.species))
 const selectedNature = computed(() => findCatalogRecord(props.catalog?.natures ?? [], current.value.nature))
 const searchKey = value => normalizeId(String(value ?? '').normalize('NFKD').replace(/\p{M}/gu, ''))
@@ -39,10 +41,10 @@ const evTotal = computed(() => STATS.reduce((total, stat) => total + (Number(cur
 const evLimit = computed(() => props.catalog?.rules?.totalEvs ?? 510)
 const maxEv = computed(() => props.catalog?.rules?.maxEv ?? 255)
 const maxIv = computed(() => props.catalog?.rules?.maxIv ?? 31)
-const statLabels = { hp: 'HP', atk: 'Attack', def: 'Defense', spa: 'Sp. Attack', spd: 'Sp. Defense', spe: 'Speed' }
+const statLabels = { hp: 'PS', atk: 'Ataque', def: 'Defensa', spa: 'At. Especial', spd: 'Def. Especial', spe: 'Velocidad' }
 const natureDescription = computed(() => selectedNature.value?.plus && selectedNature.value?.minus
-  ? `Raises ${statLabels[selectedNature.value.plus] || selectedNature.value.plus}; lowers ${statLabels[selectedNature.value.minus] || selectedNature.value.minus}.`
-  : 'No stat is raised or lowered.')
+  ? `Aumenta ${statLabels[selectedNature.value.plus] || selectedNature.value.plus}; disminuye ${statLabels[selectedNature.value.minus] || selectedNature.value.minus}.`
+  : 'No aumenta ni disminuye ninguna característica.')
 const speciesLabel = record => `#${String(record.num).padStart(3, '0')} · ${record.name}`
 
 function resetSearch() { speciesQuery.value = ''; moveQueries.value = ['', '', '', ''] }
@@ -86,7 +88,7 @@ function setHappiness(input) {
   updateMember({ happiness: boundedInput(input, 255, current.value.happiness) })
 }
 function copyPreset() {
-  const preset = props.presets.find(value => value.id === presetChoice.value)
+  const preset = kantoPresets.value.find(value => value.id === presetChoice.value)
   if (props.disabled || !preset) return
   activeSlot.value = 0; resetSearch()
   emit('update:team', createTeamDraft(preset.team))
@@ -107,63 +109,63 @@ function duplicateMove(index, name) {
 
 <template>
   <section class="team-builder" :aria-labelledby="`${id}-heading`">
-    <div class="tb-heading"><div><p class="tb-kicker">BUILD YOUR SIX</p><h3 :id="`${id}-heading`">A team of your own.</h3><p>Choose a slot, then shape its moves and battle setup.</p></div><span class="tb-count">{{ chosenCount }} / 6 Pokémon chosen</span></div>
-    <div v-if="presets.length" class="tb-preset-copy">
-      <div><label :for="`${id}-preset`">Start from a preset</label><span>Copying replaces all six slots. Make it your own afterward.</span></div>
-      <select :id="`${id}-preset`" v-model="presetChoice" :disabled="disabled"><option value="">Choose a preset…</option><option v-for="preset in presets" :key="preset.id" :value="preset.id">{{ preset.name }}</option></select>
-      <button type="button" class="tb-copy-button" :disabled="disabled || !presetChoice" @click="copyPreset">Copy preset <span aria-hidden="true">↗</span></button>
+    <div class="tb-heading"><div><p class="tb-kicker">CREA TUS SEIS</p><h3 :id="`${id}-heading`">Un equipo propio.</h3><p>Elige una ranura y define sus movimientos y configuración de combate.</p></div><span class="tb-count">{{ chosenCount }} / 6 Pokémon elegidos</span></div>
+    <div v-if="kantoPresets.length" class="tb-preset-copy">
+      <div><label :for="`${id}-preset`">Comenzar desde un equipo predefinido</label><span>Copiar reemplaza las seis ranuras. Luego puedes personalizarlo.</span></div>
+      <select :id="`${id}-preset`" v-model="presetChoice" :disabled="disabled"><option value="">Elige un equipo predefinido…</option><option v-for="preset in kantoPresets" :key="preset.id" :value="preset.id">{{ preset.name }}</option></select>
+      <button type="button" class="tb-copy-button" :disabled="disabled || !presetChoice" @click="copyPreset">Copiar predefinido <span aria-hidden="true">↗</span></button>
     </div>
 
-    <div class="tb-slots" role="group" aria-label="Choose a team slot to edit">
+    <div class="tb-slots" role="group" aria-label="Elige una ranura del equipo para editar">
       <div v-for="(member, index) in slots" :key="index" class="tb-slot-wrap">
-      <button type="button" class="tb-slot" :class="{ 'is-active': activeSlot === index, 'is-empty': !member.species }" :disabled="disabled" :aria-pressed="activeSlot === index" :aria-controls="`${id}-editor`" :aria-label="`Edit slot ${index + 1}: ${member.species || 'Choose Pokémon'}`" @click="chooseSlot(index)">
+      <button type="button" class="tb-slot" :class="{ 'is-active': activeSlot === index, 'is-empty': !member.species }" :disabled="disabled" :aria-pressed="activeSlot === index" :aria-controls="`${id}-editor`" :aria-label="`Editar ranura ${index + 1}: ${member.species || 'Elegir Pokémon'}`" @click="chooseSlot(index)">
         <span class="tb-slot-number">0{{ index + 1 }}</span><img v-if="member.species && spriteUrl(member.species)" :src="spriteUrl(member.species)" alt="" width="66" height="66" decoding="async"><span v-else class="tb-slot-empty" aria-hidden="true">＋</span>
-        <strong>{{ member.species || 'Choose Pokémon' }}</strong><span class="tb-slot-status">{{ activeSlot === index ? 'Editing this slot' : member.species ? `${member.moves.filter(Boolean).length} moves selected` : 'Empty slot' }}</span>
+        <strong>{{ member.species || 'Elegir Pokémon' }}</strong><span class="tb-slot-status">{{ activeSlot === index ? 'Editando esta ranura' : member.species ? `${member.moves.filter(Boolean).length} mov. seleccionados` : 'Ranura vacía' }}</span>
       </button>
       <slot name="slot-actions" :member="member" :index="index"></slot>
       </div>
     </div>
 
-    <p v-if="!catalog" class="tb-loading" role="status">Loading the Gen 3 team catalog…</p>
+    <p v-if="!catalog" class="tb-loading" role="status">Cargando el catálogo de equipos de Kanto…</p>
     <fieldset v-else :id="`${id}-editor`" class="tb-editor" :disabled="disabled" :aria-labelledby="`${id}-member-heading`">
-      <legend class="tb-sr-only">Edit team slot {{ activeSlot + 1 }}</legend>
+      <legend class="tb-sr-only">Editar ranura del equipo {{ activeSlot + 1 }}</legend>
       <div class="tb-editor-heading">
-        <div class="tb-member-profile"><img v-if="selectedSpecies" :src="spriteUrl(selectedSpecies.name)" alt="" width="88" height="88"><span v-else class="tb-profile-empty" aria-hidden="true">?</span><div><p class="tb-kicker">SLOT 0{{ activeSlot + 1 }} <span>· LEVEL 100</span></p><h4 :id="`${id}-member-heading`">{{ selectedSpecies?.name || 'Choose your Pokémon' }}</h4><div v-if="selectedSpecies" class="tb-types"><span v-for="type in selectedSpecies.types" :key="type">{{ type }}</span><span v-if="selectedSpecies.kind !== 'base'" class="tb-form-label">{{ selectedSpecies.kind === 'cosmetic' ? 'Cosmetic form' : 'Alternate form' }}</span></div><p v-else class="tb-empty-help">Start with a species. Every slot is yours to build.</p></div></div>
-        <button v-if="current.species" type="button" class="tb-clear-slot" @click="clearSlot">Clear slot</button>
+        <div class="tb-member-profile"><img v-if="selectedSpecies" :src="spriteUrl(selectedSpecies.name)" alt="" width="88" height="88"><span v-else class="tb-profile-empty" aria-hidden="true">?</span><div><p class="tb-kicker">RANURA 0{{ activeSlot + 1 }} <span>· NIVEL 100</span></p><h4 :id="`${id}-member-heading`">{{ selectedSpecies?.name || 'Elige tu Pokémon' }}</h4><div v-if="selectedSpecies" class="tb-types"><span v-for="type in selectedSpecies.types" :key="type">{{ translateType(type) }}</span><span v-if="selectedSpecies.kind !== 'base'" class="tb-form-label">{{ selectedSpecies.kind === 'cosmetic' ? 'Forma cosmética' : 'Forma alternativa' }}</span></div><p v-else class="tb-empty-help">Comienza con una especie. Cada ranura es tuya para crear.</p></div></div>
+        <button v-if="current.species" type="button" class="tb-clear-slot" @click="clearSlot">Vaciar ranura</button>
       </div>
 
       <div class="tb-species-controls">
-        <label :for="`${id}-species-search`">Find a Pokémon<input :id="`${id}-species-search`" v-model="speciesQuery" type="search" placeholder="Name, type or Pokédex number" autocomplete="off" :aria-controls="`${id}-species`" :aria-describedby="`${id}-species-count`"></label>
-        <label :for="`${id}-species`">Species<select :id="`${id}-species`" :value="current.species" @change="chooseSpecies($event.target.value)"><option value="" disabled>Choose Pokémon…</option><optgroup v-if="preserveSpecies" label="Current selection"><option :value="selectedSpecies.name">{{ speciesLabel(selectedSpecies) }}</option></optgroup><option v-if="current.species && !selectedSpecies" :value="current.species">{{ current.species }} — choose a catalog species</option><option v-for="record in speciesMatches" :key="record.id" :value="record.name">{{ speciesLabel(record) }}</option></select></label>
+        <label :for="`${id}-species-search`">Buscar un Pokémon de Kanto (#001–#151)<input :id="`${id}-species-search`" v-model="speciesQuery" type="search" placeholder="Nombre, tipo o número de Pokédex (#001–#151)" autocomplete="off" :aria-controls="`${id}-species`" :aria-describedby="`${id}-species-count`"></label>
+        <label :for="`${id}-species`">Especie<select :id="`${id}-species`" :value="current.species" @change="chooseSpecies($event.target.value)"><option value="" disabled>Elegir Pokémon…</option><optgroup v-if="preserveSpecies" label="Selección actual"><option :value="selectedSpecies.name">{{ speciesLabel(selectedSpecies) }}</option></optgroup><option v-if="current.species && !selectedSpecies" :value="current.species">{{ current.species }} — elige una especie del catálogo</option><option v-for="record in speciesMatches" :key="record.id" :value="record.name">{{ speciesLabel(record) }}</option></select></label>
       </div>
-      <div class="tb-search-summary"><span :id="`${id}-species-count`" aria-live="polite">{{ speciesMatches.length }} matching Pokémon</span><span>Changing species resets this slot’s moves, item and stat settings.</span></div>
+      <div class="tb-search-summary"><span :id="`${id}-species-count`" aria-live="polite">{{ speciesMatches.length }} Pokémon de Kanto disponibles</span><span>Cambiar de especie restablece los movimientos, objeto y estadísticas de esta ranura.</span></div>
 
       <template v-if="selectedSpecies">
         <div class="tb-loadout-grid">
-          <div><label :for="`${id}-ability`">Ability<select :id="`${id}-ability`" :value="current.ability" @change="updateMember({ ability: $event.target.value })"><option value="" disabled>Choose an ability</option><option v-if="current.ability && !selectedAbilities.some(ability => ability.name === current.ability)" :value="current.ability">{{ current.ability }} — check selection</option><option v-for="ability in selectedAbilities" :key="ability.id" :value="ability.name">{{ ability.name }}</option></select></label><p class="tb-field-help">{{ abilityDescription || 'Choose one of this Pokémon’s Gen 3 abilities.' }}</p></div>
-          <div><label :for="`${id}-item`">Held item<select :id="`${id}-item`" :value="current.item" @change="updateMember({ item: $event.target.value })"><option value="">None</option><option v-for="item in catalog.items" :key="item.id" :value="item.name">{{ item.name }}</option></select></label><p class="tb-field-help">{{ itemDescription || 'Enter battle without a held item.' }}</p></div>
-          <div><label :for="`${id}-nature`">Nature<select :id="`${id}-nature`" :value="current.nature" @change="updateMember({ nature: $event.target.value })"><option v-for="nature in catalog.natures" :key="nature.id" :value="nature.name">{{ nature.name }}</option></select></label><p class="tb-field-help">{{ natureDescription }}</p></div>
+          <div><label :for="`${id}-ability`">Habilidad<select :id="`${id}-ability`" :value="current.ability" @change="updateMember({ ability: $event.target.value })"><option value="" disabled>Elegir habilidad</option><option v-if="current.ability && !selectedAbilities.some(ability => ability.name === current.ability)" :value="current.ability">{{ current.ability }} — verificar selección</option><option v-for="ability in selectedAbilities" :key="ability.id" :value="ability.name">{{ ability.name }}</option></select></label><p class="tb-field-help">{{ abilityDescription || 'Elige una de las habilidades de Gen 3 de este Pokémon.' }}</p></div>
+          <div><label :for="`${id}-item`">Objeto equipado<select :id="`${id}-item`" :value="current.item" @change="updateMember({ item: $event.target.value })"><option value="">Ninguno</option><option v-for="item in catalog.items" :key="item.id" :value="item.name">{{ item.name }}</option></select></label><p class="tb-field-help">{{ itemDescription || 'Entrar al combate sin objeto equipado.' }}</p></div>
+          <div><label :for="`${id}-nature`">Naturaleza<select :id="`${id}-nature`" :value="current.nature" @change="updateMember({ nature: $event.target.value })"><option v-for="nature in catalog.natures" :key="nature.id" :value="nature.name">{{ nature.name }}</option></select></label><p class="tb-field-help">{{ natureDescription }}</p></div>
         </div>
 
-        <div class="tb-section-heading"><div><p class="tb-kicker">MOVESET</p><h4>Four moves. Your strategy.</h4></div><span>{{ availableMoves.length }} learnset candidates</span></div>
+        <div class="tb-section-heading"><div><p class="tb-kicker">MOVIMIENTOS</p><h4>Cuatro movimientos. Tu estrategia.</h4></div><span>{{ availableMoves.length }} movimientos disponibles</span></div>
         <div class="tb-moves">
           <div v-for="(_, index) in current.moves" :key="index" class="tb-move-card">
-            <div class="tb-move-heading"><label :for="`${id}-move-${index}`">MOVE 0{{ index + 1 }}</label><span v-if="chosenMoves[index]">{{ chosenMoves[index].type }} · {{ chosenMoves[index].category }} · {{ chosenMoves[index].pp }} PP</span></div>
-            <input v-model="moveQueries[index]" type="search" :aria-label="`Search moves for slot ${index + 1}`" :aria-controls="`${id}-move-${index}`" placeholder="Search name, type or category" autocomplete="off">
-            <select :id="`${id}-move-${index}`" :value="current.moves[index]" @change="chooseMove(index, $event.target.value)"><option value="">Choose a move…</option><optgroup v-if="preserveMove(index)" label="Current selection"><option :value="current.moves[index]">{{ current.moves[index] }}</option></optgroup><option v-for="move in moveMatches[index]" :key="move.id" :value="move.name" :disabled="duplicateMove(index, move.name)">{{ move.name }}</option></select>
-            <p class="tb-move-description">{{ chosenMoves[index]?.shortDesc || (moveMatches[index].length ? 'Choose a move from this Pokémon’s learnset candidates.' : 'No matching moves. Try a different search.') }}</p>
+            <div class="tb-move-heading"><label :for="`${id}-move-${index}`">MOVIMIENTO 0{{ index + 1 }}</label><span v-if="chosenMoves[index]">{{ translateType(chosenMoves[index].type) }} · {{ translateCategory(chosenMoves[index].category) }} · {{ chosenMoves[index].pp }} PP</span></div>
+            <input v-model="moveQueries[index]" type="search" :aria-label="`Buscar movimientos para la ranura ${index + 1}`" :aria-controls="`${id}-move-${index}`" placeholder="Buscar nombre, tipo o categoría" autocomplete="off">
+            <select :id="`${id}-move-${index}`" :value="current.moves[index]" @change="chooseMove(index, $event.target.value)"><option value="">Elige un movimiento…</option><optgroup v-if="preserveMove(index)" label="Selección actual"><option :value="current.moves[index]">{{ current.moves[index] }}</option></optgroup><option v-for="move in moveMatches[index]" :key="move.id" :value="move.name" :disabled="duplicateMove(index, move.name)">{{ move.name }}</option></select>
+            <p class="tb-move-description">{{ chosenMoves[index]?.shortDesc || (moveMatches[index].length ? 'Elige un movimiento de la lista disponible para este Pokémon.' : 'No hay movimientos coincidentes. Intenta con otra búsqueda.') }}</p>
           </div>
         </div>
-        <p class="tb-validation-note">These are Gen 3 learnset candidates. The server checks the complete team, including move combinations, before a challenge can begin.</p>
+        <p class="tb-validation-note">Estos son movimientos disponibles en Gen 3. El servidor verifica el equipo completo, incluyendo combinaciones de movimientos, antes de iniciar un desafío.</p>
 
         <details class="tb-advanced">
-          <summary><span>Advanced settings</span><span>EVs, IVs, gender & friendship <span aria-hidden="true">＋</span></span></summary>
+          <summary><span>Ajustes avanzados</span><span>EVs, IVs, género y amistad <span aria-hidden="true">＋</span></span></summary>
           <div class="tb-advanced-body">
-            <div class="tb-stats-heading"><div><h4>Stat training</h4><p>EVs share a {{ evLimit }}-point budget. IVs range from 0 to {{ maxIv }}.</p></div><span :id="`${id}-ev-budget`" class="tb-ev-budget" :class="{ 'is-over': evTotal > evLimit }" role="status">{{ evTotal }} / {{ evLimit }} EVs<span>{{ evTotal > evLimit ? `${evTotal - evLimit} over the limit` : `${evLimit - evTotal} remaining` }}</span></span></div>
-            <div class="tb-stat-grid"><span class="tb-stat-column-heading">STAT</span><span class="tb-stat-column-heading">EVs · 0–{{ maxEv }}</span><span class="tb-stat-column-heading">IVs · 0–{{ maxIv }}</span><span class="tb-stat-column-heading tb-training-heading">EV DISTRIBUTION</span>
-              <template v-for="stat in STATS" :key="stat"><strong class="tb-stat-name">{{ statLabels[stat] }}</strong><input type="number" :value="current.evs[stat]" min="0" :max="maxEv" step="1" inputmode="numeric" :aria-label="`${statLabels[stat]} EVs`" :aria-describedby="`${id}-ev-budget`" :aria-invalid="evTotal > evLimit ? 'true' : undefined" @input="setStat('evs', stat, $event.target)"><input type="number" :value="current.ivs[stat]" min="0" :max="maxIv" step="1" inputmode="numeric" :aria-label="`${statLabels[stat]} IVs`" @input="setStat('ivs', stat, $event.target)"><span class="tb-stat-meter" aria-hidden="true"><i :style="{ width: `${Math.min(100, (Number(current.evs[stat]) || 0) / maxEv * 100)}%` }"></i></span></template>
+            <div class="tb-stats-heading"><div><h4>Entrenamiento de estadísticas</h4><p>Los EVs comparten un presupuesto de {{ evLimit }} puntos. Los IVs van de 0 a {{ maxIv }}.</p></div><span :id="`${id}-ev-budget`" class="tb-ev-budget" :class="{ 'is-over': evTotal > evLimit }" role="status">{{ evTotal }} / {{ evLimit }} EVs<span>{{ evTotal > evLimit ? `${evTotal - evLimit} por encima del límite` : `${evLimit - evTotal} restantes` }}</span></span></div>
+            <div class="tb-stat-grid"><span class="tb-stat-column-heading">ESTADÍSTICA</span><span class="tb-stat-column-heading">EVs · 0–{{ maxEv }}</span><span class="tb-stat-column-heading">IVs · 0–{{ maxIv }}</span><span class="tb-stat-column-heading tb-training-heading">DISTRIBUCIÓN DE EVS</span>
+              <template v-for="stat in STATS" :key="stat"><strong class="tb-stat-name">{{ statLabels[stat] }}</strong><input type="number" :value="current.evs[stat]" min="0" :max="maxEv" step="1" inputmode="numeric" :aria-label="`EVs de ${statLabels[stat]}`" :aria-describedby="`${id}-ev-budget`" :aria-invalid="evTotal > evLimit ? 'true' : undefined" @input="setStat('evs', stat, $event.target)"><input type="number" :value="current.ivs[stat]" min="0" :max="maxIv" step="1" inputmode="numeric" :aria-label="`IVs de ${statLabels[stat]}`" @input="setStat('ivs', stat, $event.target)"><span class="tb-stat-meter" aria-hidden="true"><i :style="{ width: `${Math.min(100, (Number(current.evs[stat]) || 0) / maxEv * 100)}%` }"></i></span></template>
             </div>
-            <div class="tb-personal-grid"><div><label :for="`${id}-gender`">Gender<select :id="`${id}-gender`" :value="current.gender || ''" @change="updateMember({ gender: $event.target.value })"><option value="">Automatic</option><option value="M">Male</option><option value="F">Female</option><option value="N">Genderless</option></select></label><p class="tb-field-help">The server checks gender against the species.</p></div><div><label :for="`${id}-happiness`">Friendship<input :id="`${id}-happiness`" type="number" :value="current.happiness" min="0" max="255" step="1" inputmode="numeric" @input="setHappiness($event.target)"></label><p class="tb-field-help">0–255. Used by moves such as Return and Frustration.</p></div></div>
+            <div class="tb-personal-grid"><div><label :for="`${id}-gender`">Género<select :id="`${id}-gender`" :value="current.gender || ''" @change="updateMember({ gender: $event.target.value })"><option value="">Automático</option><option value="M">Macho</option><option value="F">Hembra</option><option value="N">Sin género</option></select></label><p class="tb-field-help">El servidor verifica el género según la especie.</p></div><div><label :for="`${id}-happiness`">Amistad<input :id="`${id}-happiness`" type="number" :value="current.happiness" min="0" max="255" step="1" inputmode="numeric" @input="setHappiness($event.target)"></label><p class="tb-field-help">0–255. Utilizado por movimientos como Retribución y Frustración.</p></div></div>
           </div>
         </details>
       </template>

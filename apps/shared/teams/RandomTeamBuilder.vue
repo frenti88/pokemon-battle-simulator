@@ -37,22 +37,22 @@ onBeforeUnmount(() => controller.dispose())
 <template>
   <div class="random-team-builder">
     <section class="rt-panel" :aria-labelledby="`${id}-random-heading`" :aria-busy="state.busy">
-      <div class="rt-intro"><div><p class="rt-kicker">A LITTLE CHANCE. YOUR CHOICE.</p><h3 :id="`${id}-random-heading`">Find your next six.</h3><p>Generate a battle-ready team, lock your favorites, then reroll the rest.</p></div><span class="rt-badge">GEN 1–3 · LEVEL 100</span></div>
+      <div class="rt-intro"><div><p class="rt-kicker">UN TOQUE DE SUERTE. TU ELECCIÓN.</p><h3 :id="`${id}-random-heading`">Encuentra tus próximos seis.</h3><p>Genera un equipo listo para combatir, bloquea tus favoritos y cambia el resto.</p></div><span class="rt-badge">KANTO (#001–#151) · NIVEL 100</span></div>
       <div class="rt-actions">
-        <button type="button" class="rt-primary" :disabled="disabled || state.busy || !catalog || allLocked" @click="controller.run()">{{ state.busy ? 'Building your team…' : chosenCount ? 'Reroll unlocked' : 'Generate six' }} <span aria-hidden="true">↻</span></button>
-        <button type="button" :disabled="disabled || state.busy || !state.canUndo" @click="controller.undo()">Undo generation</button>
-        <button v-if="state.lockedSlots.length" type="button" :disabled="disabled" @click="controller.unlockAll()">Unlock all ({{ state.lockedSlots.length }})</button>
+        <button type="button" class="rt-primary" :disabled="disabled || state.busy || !catalog || allLocked" @click="controller.run()">{{ state.busy ? 'Creando tu equipo…' : chosenCount ? 'Cambiar desbloqueados' : 'Generar seis' }} <span aria-hidden="true">↻</span></button>
+        <button type="button" :disabled="disabled || state.busy || !state.canUndo" @click="controller.undo()">Deshacer generación</button>
+        <button v-if="state.lockedSlots.length" type="button" :disabled="disabled" @click="controller.unlockAll()">Desbloquear todos ({{ state.lockedSlots.length }})</button>
       </div>
-      <p class="rt-help">{{ allLocked ? 'All six are locked. Unlock a Pokémon to reroll.' : 'Each base species has equal odds, including legendaries. Random teams can vary in strength.' }} Locks retain the full set; direct editing is always available.</p>
-      <p v-if="state.busy" class="rt-status" role="status">Choosing Pokémon and checking their complete sets. Editing, locking, or changing your lead cancels this result.</p>
+      <p class="rt-help">{{ allLocked ? 'Los seis están bloqueados. Desbloquea un Pokémon para cambiarlo.' : 'Cada especie base tiene las mismas probabilidades, incluidos los legendarios. Los equipos aleatorios pueden variar en fuerza.' }} Los bloqueos conservan el set completo; la edición directa siempre está disponible.</p>
+      <p v-if="state.busy" class="rt-status" role="status">Eligiendo Pokémon y verificando sus sets completos. Editar, bloquear o cambiar tu líder cancela este resultado.</p>
       <p v-else-if="state.notice" class="rt-status" role="status">{{ state.notice }}</p>
-      <div v-if="state.errors.length" class="rt-errors" role="alert"><strong>Your current team has been kept.</strong><ul><li v-for="(issue, index) in state.errors" :key="index"><span v-if="Number.isInteger(issue.setIndex)">Slot {{ issue.setIndex + 1 }}: </span>{{ issue.message }}</li></ul></div>
+      <div v-if="state.errors.length" class="rt-errors" role="alert"><strong>Se ha conservado tu equipo actual.</strong><ul><li v-for="(issue, index) in state.errors" :key="index"><span v-if="Number.isInteger(issue.setIndex)">Ranura {{ issue.setIndex + 1 }}: </span>{{ issue.message }}</li></ul></div>
     </section>
     <TeamBuilder :team="team" :catalog="catalog" :presets="presets" :disabled="disabled" @update:team="controller.edit($event)">
       <template #slot-actions="{ member, index }">
         <div class="rt-slot-actions">
-          <button type="button" class="rt-lock" :class="{ 'is-locked': isLocked(index) }" :disabled="disabled || !member.species" :aria-pressed="isLocked(index)" :aria-label="`${isLocked(index) ? 'Unlock' : 'Lock'} slot ${index + 1}: ${member.species || 'empty slot'}`" @click="controller.toggleLock(index)">{{ isLocked(index) ? 'Locked' : 'Lock' }}</button>
-          <button type="button" :disabled="disabled || state.busy || !catalog || !member.species || isLocked(index)" :aria-label="`Reroll slot ${index + 1}${member.species ? `: ${member.species}` : ''}; retain the other chosen Pokémon`" @click="controller.run(index)">Reroll</button>
+          <button type="button" class="rt-lock" :class="{ 'is-locked': isLocked(index) }" :disabled="disabled || !member.species" :aria-pressed="isLocked(index)" :aria-label="`${isLocked(index) ? 'Desbloquear' : 'Bloquear'} ranura ${index + 1}: ${member.species || 'ranura vacía'}`" @click="controller.toggleLock(index)">{{ isLocked(index) ? 'Bloqueado' : 'Bloquear' }}</button>
+          <button type="button" :disabled="disabled || state.busy || !catalog || !member.species || isLocked(index)" :aria-label="`Cambiar ranura ${index + 1}${member.species ? `: ${member.species}` : ''}; mantener los otros Pokémon seleccionados`" @click="controller.run(index)">Cambiar</button>
         </div>
       </template>
     </TeamBuilder>
