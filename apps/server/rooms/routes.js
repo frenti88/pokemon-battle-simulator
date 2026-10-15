@@ -40,7 +40,8 @@ function checkOrigin(req, publicOrigin) {
   if (typeof host !== 'string' || /[\s/\\,#]/.test(host)) throw new HttpError(403, 'ORIGIN_REJECTED', 'The request must come from this application.')
   // A configured browser origin is authoritative, including behind a proxy.
   // Forwarded headers never grant another origin access or identify a guest.
-  const expected = publicOrigin ?? `${req.socket.encrypted ? 'https' : 'http'}://${host}`
+  const proto = req.headers['x-forwarded-proto'] || (req.socket.encrypted ? 'https' : 'http')
+  const expected = publicOrigin ?? `${proto}://${host}`
   if ((req.method !== 'GET' && !req.headers.origin) ||
       (req.headers.origin && req.headers.origin !== expected) ||
       (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(req.headers['sec-fetch-site']))) {
@@ -155,7 +156,7 @@ export function createMultiplayerService({ publicOrigin, rateLimits = {}, ...ser
     count(window, kind)
   }
   function setCookie(req, res, token, expiresAt) {
-    const secure = publicOrigin?.startsWith('https://') || req.socket.encrypted
+    const secure = publicOrigin?.startsWith('https://') || req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https'
     const maxAge = Math.max(0, Math.ceil((expiresAt - clock()) / 1000))
     res.setHeader('Set-Cookie', `${COOKIE}=${token}; Path=${PREFIX}; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure ? '; Secure' : ''}`)
   }
