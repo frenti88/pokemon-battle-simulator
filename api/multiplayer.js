@@ -8,11 +8,7 @@ const multiplayer = createMultiplayerService({
 });
 
 export default function handler(req, res) {
-  if (req.headers['x-matched-path']) {
-    const qIndex = (req.url ?? '').indexOf('?');
-    const query = qIndex >= 0 ? req.url.slice(qIndex) : '';
-    req.url = req.headers['x-matched-path'] + query;
-  }
+  req.url = req.headers['x-forwarded-uri'] || req.headers['x-matched-path'] || req.url || '/';
   return multiplayer.middleware(req, res, () => {
     res.statusCode = 404;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
