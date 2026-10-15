@@ -2,28 +2,19 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/api/multiplayer/:path*",
-      "destination": "https://pokemon-battle-simulator-r1p3.onrender.com/api/multiplayer/:path*"
-    },
-    {
-      "source": "/api/simulation/:path*",
-      "destination": "https://pokemon-battle-simulator-r1p3.onrender.com/api/simulation/:path*"
-    }
-  ],
+  "framework": "vite",
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/api/multiplayer/:path*",
       "headers": [
-        { "key": "x-vercel-enable-rewrite-caching", "value": "0" },
         { "key": "Cache-Control", "value": "no-store" }
       ]
     },
     {
       "source": "/api/simulation/:path*",
       "headers": [
-        { "key": "x-vercel-enable-rewrite-caching", "value": "0" }
+        { "key": "Cache-Control", "value": "no-store" }
       ]
     }
   ]
